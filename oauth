@@ -1,0 +1,4 @@
+https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=6d9fa4f5-d7b6-4155-9461-549a93e091bb&redirect_uri=https%3A%2F%2Fshuvooa707-reimagined-engine-v66g7jggxxjhwgv9-8000.preview.app.github.dev%2Fauth%2Fmicrosoft%2Fcallback&
+scope=User.Read&
+response_type=code&
+state=suuXvRuMwh56NIcyBYEDqg5ca2XnaxT5kaJvxG2E
