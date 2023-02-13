@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Http;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -64,8 +66,23 @@ Route::get('/auth/google/callback', [ AuthController::class, "googleCallback" ])
 
 
 Route::get('/auth/microsoft/redirect', function () {
-    return  Socialite::driver('microsoft')->redirect();
+    return Socialite::driver('microsoft')->redirect();
 })->name('microsoft.redirect');
 Route::get('/auth/microsoft/callback', [ AuthController::class, "microsoftCallback" ])->name('microsoft.callback');
 
 
+Route::get('/auth/linkedin/redirect', function () {
+    return Socialite::driver('linkedin')->redirect();
+})->name('linkedin.redirect');
+Route::get('/auth/linkedin/callback', [ AuthController::class, "linkedinCallback" ])->name('linkedin.callback');
+
+
+Route::get("/linked", function(){
+    $client = new \GuzzleHttp\Client();
+    $headers = [
+        'Content-Type' => 'application/x-www-form-urlencoded'
+    ];
+    $response = $client->post('https://www.linkedin.com/oauth/v2/accessToken?grant_type=authorization_code&client_id=77528z2okrto7o&client_secret=qHVaSyNkdFNXlgDq', $headers);
+    // $res = $client->sendAsync($request)->wait();
+    dd($response);
+});

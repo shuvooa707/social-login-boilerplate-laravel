@@ -22,6 +22,7 @@ class EventServiceProvider extends ServiceProvider
             // ... other providers
             \SocialiteProviders\Instagram\InstagramExtendSocialite::class.'@handle',
             \SocialiteProviders\Microsoft\MicrosoftExtendSocialite::class.'@handle',
+            \SocialiteProviders\LinkedIn\LinkedInExtendSocialite::class.'@handle'
         ],
     ];
 

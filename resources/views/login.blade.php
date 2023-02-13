@@ -52,6 +52,9 @@
                         <a href="{{ routec('google.redirect') }}" class="google btn">
                             <i class="fa fa-google fa-fw"></i> Login with Google+
                         </a>
+                        <a href="{{ routec('linkedin.redirect') }}" class="linkedin btn">
+                            <i class="fa fa-linkedin" aria-hidden="true"></i> Login with Linkedin
+                        </a>
                         <a href="{{ routec('github.redirect') }}" class="github btn">
                             <i class="fa fa-github" aria-hidden="true"></i> Login with Github
                         </a>
@@ -60,4 +63,11 @@
             </div>
         </div>
     </section>
+
+    <h1 id="reload-in">
+    </h1>
+    <script>
+        let r = document.querySelect("#reload-in");
+        
+    </script>
 @endsection

@@ -8,6 +8,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Hash;
+use Microsoft\Graph\Graph;
+use Microsoft\Graph\Http;
+use Microsoft\Graph\Model;
+use GuzzleHttp\Client;
+use App\Services\Microsoft\GraphHelper;
+use PhpParser\Node\Stmt\TryCatch;
 
 class AuthController extends Controller
 {
@@ -221,38 +227,45 @@ class AuthController extends Controller
     }
 
 
-    public static function getUserToken(): string {
+    public function micro() {
+        GraphHelper::initializeGraphForUserAuth();
         // If we already have a user token, just return it
         // Tokens are valid for one hour, after that it needs to be refreshed
         if (isset(GraphHelper::$userToken)) {
             return GraphHelper::$userToken;
         }
-    
+
         // https://learn.microsoft.com/azure/active-directory/develop/v2-oauth2-device-code
         $deviceCodeRequestUrl = 'https://login.microsoftonline.com/'.GraphHelper::$tenantId.'/oauth2/v2.0/devicecode';
         $tokenRequestUrl = 'https://login.microsoftonline.com/'.GraphHelper::$tenantId.'/oauth2/v2.0/token';
-    
+
+        dump(GraphHelper::$clientId,GraphHelper::$graphUserScopes);
         // First POST to /devicecode
-        $deviceCodeResponse = json_decode(GraphHelper::$tokenClient->post($deviceCodeRequestUrl, [
-            'form_params' => [
-                'client_id' => GraphHelper::$clientId,
-                'scope' => GraphHelper::$graphUserScopes
-            ]
-        ])->getBody()->getContents());
-    
+        try {
+            $deviceCodeResponse = json_decode(GraphHelper::$tokenClient->post($deviceCodeRequestUrl, [
+                'form_params' => [
+                    'client_id' => GraphHelper::$clientId,
+                    'scope' => GraphHelper::$graphUserScopes
+                ]
+            ])->getBody()->getContents());
+        } catch(\Exception $e) {
+            dd($e);
+        }
+        
+
         // Display the user prompt
         print($deviceCodeResponse->message.PHP_EOL);
-    
+
         // Response also indicates how often to poll for completion
         // And gives a device code to send in the polling requests
         $interval = (int)$deviceCodeResponse->interval;
         $device_code = $deviceCodeResponse->device_code;
-    
+
         // Do polling - if attempt times out the token endpoint
         // returns an error
         while (true) {
             sleep($interval);
-    
+
             // POST to the /token endpoint
             $tokenResponse = GraphHelper::$tokenClient->post($tokenRequestUrl, [
                 'form_params' => [
@@ -267,11 +280,12 @@ class AuthController extends Controller
                     CURLOPT_FAILONERROR => false
                 ]
             ]);
-    
+
             if ($tokenResponse->getStatusCode() == 200) {
                 // Return the access_token
                 $responseBody = json_decode($tokenResponse->getBody()->getContents());
                 GraphHelper::$userToken = $responseBody->access_token;
+                dd($responseBody->access_token);
                 return $responseBody->access_token;
             } else if ($tokenResponse->getStatusCode() == 400) {
                 // Check the error in the response body
@@ -287,10 +301,41 @@ class AuthController extends Controller
         }
     }
 
-    public function microsoftCallback() 
+    public function microsoftCallback(Request $request) 
     {
-        $liveuser = (object)Socialite::driver('microsoft');
+        $liveuser = Socialite::driver('microsoft')->user();
         dd($liveuser);
+        $email = $liveuser->email;
+        $user = User::where("email", $email)->get()->first();
+        if ( $user ) 
+        {
+            Auth::login($user);
+            return redirect(routec("profile"));
+        }
+        else 
+        {
+            $name = explode(" ", $liveuser->name);
+            $img =  Str::uuid() . ".jpg";
+            file_put_contents("./img/" . $img, file_get_contents($liveuser->avatar));
+            $user = User::create([
+                "email" => $liveuser->email,
+                "firstname" => $name[0],
+                "lastname" => end($name),
+                "img" => $img,
+                "password" => Hash::make(Str::uuid())
+            ]);
+            if ( $user ) 
+            {
+                Auth::login($user);
+                return redirect(routec("profile"));
+            }
+            return redirect(routec("login"));
+        }
+    }
+
+    public function linkedinCallback(Request $request) 
+    {
+        $liveuser = Socialite::driver('linkedin')->user();
         $email = $liveuser->email;
         $user = User::where("email", $email)->get()->first();
         if ( $user ) 
